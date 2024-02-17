@@ -6,17 +6,19 @@ from django.utils import timezone
 from django.conf import settings
 
 class User(AbstractUser):
+    # from shop.models import PaymentMethod
+    
     ACCOUNT_TYPE_CHOICES = [
         ('normal', 'Normal'),
         ('vendor', 'Vendor'),
         ('hairdresser', 'Hairdresser'),
     ]
-
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, default='normal')
     date_joined = models.DateTimeField(default=timezone.now)
     email = models.EmailField(unique=True, blank=False)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
+    payment_methods=models.ManyToManyField('shop.PaymentMethod', through="shop.UserPaymentMethod", related_name='users')
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -31,7 +33,7 @@ class UserProfile(models.Model):
 
     # Additional fields
     bio = models.TextField(null=True, blank=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', default='profile_pictures/default.jpeg', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,7 +45,7 @@ class HairdresserProfile(models.Model):
     hairdresser_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='hairdresser_profile')
     salon_name = models.CharField(max_length=255)
-    profile_pic = models.ImageField(upload_to='hairdresser_profiles/', null=True, blank=True)
+    profile_pic = models.ImageField(upload_to='hairdresser_profiles/', default='profile_pictures/default.jpeg', null=True, blank=True)
     address = models.TextField()  # Address that can be viewed on a map
     description = models.TextField()
     services_offered = models.TextField()  # List of services offered
@@ -54,6 +56,22 @@ class HairdresserProfile(models.Model):
     def __str__(self):
         return self.salon_name
     
+class vendorProfile(models.Model):
+    user=models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_profile')
+    shop_name=models.CharField(max_length=255)
+    shop_description=models.TextField()
+    shop_logo=models.ImageField(upload_to='logos/', default='logos/default.jpeg', null=True, blank=True)
+    address=models.TextField()
+    phone_number=models.CharField(max_length=20)
+    website=models.URLField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table='vendor_profiles'
+    
+    def __str__(self):
+        return f"{self.user.username} vendor profile"
 class Post(models.Model):
     
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
