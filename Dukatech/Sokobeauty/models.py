@@ -56,7 +56,7 @@ class HairdresserProfile(models.Model):
     def __str__(self):
         return self.salon_name
     
-class vendorProfile(models.Model):
+class VendorProfile(models.Model):
     user=models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_profile')
     shop_name=models.CharField(max_length=255)
     shop_description=models.TextField()
@@ -78,6 +78,7 @@ class Post(models.Model):
 
     image = models.ImageField(upload_to='posts/images/', null=True, blank=True)
     video = models.FileField(upload_to='posts/videos/', null=True, blank=True)
+    like_count=models.IntegerField(default=0)
     is_booking = models.BooleanField(default=False)
     is_purchasing = models.BooleanField(default=False)
     content = models.TextField()
@@ -89,6 +90,13 @@ class Post(models.Model):
     def __str__(self):
         return f"Post by {self.author.username} on {self.created_at.strftime('%Y-%m-%d')}"
     
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            return super().save(*args, **kwargs)
+        else:   
+            self.like_count=self.likes.count()
+            return super().save(*args, **kwargs)
+    
 class post_like(models.Model):
     # ForeignKey to the User model
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
@@ -97,6 +105,12 @@ class post_like(models.Model):
 
     # Timestamp for when the like is created
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # def save(self, *args, **kwargs):
+    #     from .signals import update_likes_count
+        
+    #     update_likes_count.send(sender=post_like,instance=self, post_id=self.post_id)
+    #     return super().save(*args, **kwargs)
 
     class Meta:
         # Ensuring that each user can only like a specific post once
@@ -104,7 +118,7 @@ class post_like(models.Model):
 
     def __str__(self):
         # String representation of the Like instance
-        return f"{self.user.username} likes {self.post.id}"
+        return f"{self.user.username} likes post {self.post.id}"
 
 class comment(models.Model):
     # ForeignKey to link to the User model, representing the author of the comment
