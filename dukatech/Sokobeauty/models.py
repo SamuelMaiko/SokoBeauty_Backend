@@ -5,6 +5,8 @@ from django.utils import timezone
 # from Sokobeauty.models import Reply  
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+
 
 class User(AbstractUser):
     ACCOUNT_TYPE_CHOICES = [
@@ -73,67 +75,69 @@ class Post(models.Model):
         return f"Post by {self.author.username} on {self.created_at.strftime('%Y-%m-%d')}"
     
 class post_like(models.Model):
-    # ForeignKey to the User model
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
-    # ForeignKey to the Post model
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
-
-    # Timestamp for when the like is created
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Ensuring that each user can only like a specific post once
         unique_together = ('user', 'post')
 
     def __str__(self):
-        # String representation of the Like instance
-        return f"{self.user.username} likes {self.post.id}"
+        return f"{self.user.username} likes {self.post.id} is {self.post.image}"
 
 class comment(models.Model):
-    # ForeignKey to link to the User model, representing the author of the comment
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
-
-    # ForeignKey to link to the Post model, representing the post on which the comment is made
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-
-    # The content of the comment
+    post = models.ForeignKey(Post, on_delete=models.CASCADE,null=True, related_name='comments')
     content = models.TextField()
-
-    # Timestamp for when the comment is created
     created_at = models.DateTimeField(auto_now_add=True)
-
-    # Timestamp for when the comment is last updated
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Comment by {self.user.username} on {self.post.id}"
     
-    
 
-
-# class comment_replies(models.Model):
-#     comment_id = models.ForeignKey(comment, on_delete=models.CASCADE, related_name='replies')
-#     user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_replies')
-#     content = models.TextField()
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return f'Reply by {self.author.username} on Comment {self.comment.id}'
 
 class comment_replies(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_replies')
-    parent_comment = models.ForeignKey(comment, on_delete=models.CASCADE, related_name='comment_replies', null=True, blank=True)
-    parent_reply = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
+    parent_comment = models.ForeignKey(comment, on_delete=models.CASCADE, null =True, related_name='replies')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        parent_comment_str = ''
         if self.parent_comment:
-            return f'Reply by {self.user.username} on Comment {self.parent_comment.id}'
-        else:
-            return f'Reply by {self.user.username} on Reply {self.parent_reply.id}'
+            parent_comment_str = f' (nested under {self.parent_comment})'
+        return f'{self.user.username}: {self.content}{parent_comment_str}'
+
+    def __str__(self):
+        return f'Reply by {self.user.username} on Reply {self.parent_comment.id}'
+        # if self.parent_comment:
+        #     return f'Reply by {self.user.username} on Comment {self.parent_comment.id}'
+        # else:
+        #     return f'Reply by {self.user.username} on Reply {self.parent_reply.id}'
+        
+        
+class nested_replies(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_nested_replies')
+    parent_reply = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
+    comment_reply = models.ForeignKey(comment_replies, null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def clean(self):
+    # Ensure that a reply is only nested under a comment reply or another reply, not both
+        if self.parent_reply and self.comment_reply:
+            raise ValidationError('A reply cannot be both a nested reply and a comment reply at the same time.')
+
+    # Additional custom validation logic as needed
+    def __str__(self):
+        parent_reply_str = ''
+        if self.parent_reply:
+            parent_reply_str = f' (nested under {self.parent_reply.user.username})'
+        return f'{self.user.username}: {self.content}{parent_reply_str}'
+
 
 class comment_like(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_likes')
@@ -141,7 +145,6 @@ class comment_like(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Ensure each user can like a comment only once
         unique_together = ('user_id', 'comment_id')
     def __str__(self):
         return f'{self.user_id.username} likes Comment {self.comment_id.id}'
@@ -152,25 +155,12 @@ class comment_replies_like(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'reply')  # Ensures a user can only like a specific reply once
+        unique_together = ('user', 'reply')  
 
     def __str__(self):
         return f'{self.user.username} likes Reply {self.reply.id}'
 
-    
-    
-# class replies_likes(models.Model):  # Renamed from replies_likes for consistency
-#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reply_likes')
-#     reply = models.ForeignKey('Sokobeauty.Reply', on_delete=models.CASCADE, related_name='likes')  # String-based reference
-#     created_at = models.DateTimeField(auto_now_add=True)
 
-#     class Meta:
-#         unique_together = ('user', 'reply')
-
-#     def __str__(self):
-#         return f'{self.user} likes {self.reply}'
-
-   
     
 class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following')
@@ -260,3 +250,32 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review by {self.user.username} for {self.hairdresser.salon_name}"
+
+# class comment_replies(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_replies')
+#     parent_comment = parent_comment = models.ForeignKey(comment, on_delete=models.CASCADE, related_name='comment_replies', null=True, blank=True)
+#     content = models.TextField()
+    
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+    
+    # user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_replies')
+    # parent_comment = models.ForeignKey(comment, on_delete=models.CASCADE, related_name='comment_replies', null=True, blank=True)
+    # # parent_reply = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
+    # content = models.TextField()
+    # created_at = models.DateTimeField(auto_now_add=True)
+    # updated_at = models.DateTimeField(auto_now=True)
+
+    
+# class replies_likes(models.Model):  # Renamed from replies_likes for consistency
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reply_likes')
+#     reply = models.ForeignKey('Sokobeauty.Reply', on_delete=models.CASCADE, related_name='likes')  # String-based reference
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         unique_together = ('user', 'reply')
+
+#     def __str__(self):
+#         return f'{self.user} likes {self.reply}'
+
+   

@@ -6,13 +6,13 @@ from .models import UserProfile
 from .models import HairdresserProfile
 from .models import Post
 from .models import post_like
-from .models import comment
+from .models import comment , Cancellation
 from .models import comment_like
 from .models import comment_replies
 from .models import comment_replies_like
 from .models import Booking
 from .models import Follow
-from .models import Review
+from .models import Review ,nested_replies
 
 
 admin.site.register(User)
@@ -20,8 +20,10 @@ admin.site.register(UserProfile)
 admin.site.register(HairdresserProfile)
 admin.site.register(Post)
 admin.site.register(post_like)
+admin.site.register(Cancellation)
 admin.site.register(comment)
 admin.site.register(comment_replies)
+admin.site.register(nested_replies)
 admin.site.register(Booking)
 admin.site.register(comment_like)
 admin.site.register(Follow)
