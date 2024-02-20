@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Sokobeauty',
     'shop',
+    # 'rest_framework',
+    # 'mama_pesa',
 ]
 
 MIDDLEWARE = [
