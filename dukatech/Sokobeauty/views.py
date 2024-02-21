@@ -1,9 +1,7 @@
 from django.shortcuts import render
-
 from rest_framework import generics
 from .models import Category
 from .serializers import CategorySerializer
-
 from .models import Product
 from .serializers import ProductSerializer ,ProductCreateSerializer,CategoryProductSerializer
 
@@ -51,7 +49,6 @@ class SpecificCartView(generics.RetrieveAPIView):
     # permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Attempt to retrieve the authenticated user's cart
         cart, created = Cart.objects.get_or_create(user=self.request.user)
         return cart
 
@@ -78,42 +75,29 @@ from .serializers import OrderSerializer, OrderItemSerializer
 class OrderListCreateAPIView(generics.ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+#     permission_classes = [IsAuthenticated]
 
 class OrderDetailAPIView(generics.RetrieveAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+#     permission_classes = [IsAuthenticated]
     
-# order for autthenticated user
-# class OrderListCreateAPIView(generics.ListCreateAPIView):
-#     queryset = Order.objects.all()
-#     serializer_class = OrderSerializer
-#     permission_classes = [IsAuthenticated]
 
-# class OrderDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = Order.objects.all()
-#     serializer_class = OrderSerializer
-#     permission_classes = [IsAuthenticated]
     
     
 class UserOrderListAPIView(generics.ListAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        This view should return a list of all orders
-        for the currently authenticated user.
-        """
         user = self.request.user
         return Order.objects.filter(user=user)
 
 class UserOrderDetailAPIView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        This view returns an order for the currently authenticated user.
-        """
+       
         user = self.request.user
         return Order.objects.filter(user=user)

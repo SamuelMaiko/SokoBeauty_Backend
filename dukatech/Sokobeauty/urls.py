@@ -15,6 +15,6 @@ urlpatterns = [
     path('cart/<int:cart_id>/', CartDetailView.as_view(), name='cart-detail-view'),
     path('orders/', OrderListCreateAPIView.as_view(), name='order-list-create'),
     path('orders/<int:pk>/', OrderDetailAPIView.as_view(), name='order-detail'),
-    path('orderswithusers/', UserOrderListAPIView.as_view(), name='user-orders'),
-    path('orderswithusers/<int:pk>/', UserOrderDetailAPIView.as_view(), name='user-order-detail'),
+    path('orderswithuser/', UserOrderListAPIView.as_view(), name='user-orders'),
+    path('orderswithuser/<int:pk>/', UserOrderDetailAPIView.as_view(), name='user-order-detail'),
 ]
