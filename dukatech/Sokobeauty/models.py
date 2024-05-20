@@ -20,6 +20,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
+    payment_methods=models.ManyToManyField('shop.PaymentMethod', through="shop.UserPaymentMethod", related_name='users')
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -56,6 +57,21 @@ class HairdresserProfile(models.Model):
 
     def __str__(self):
         return self.salon_name
+    
+class VendorProfile(models.Model):
+    user=models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_profile')
+    shop_name=models.CharField(max_length=255)
+    shop_description=models.TextField()
+    shop_logo=models.ImageField(upload_to='logos/', default='logos/default.jpeg', null=True, blank=True)
+    address=models.TextField()
+    phone_number=models.CharField(max_length=20)
+    website=models.URLField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} vendor profile"
+
     
 class Post(models.Model):
     
@@ -120,7 +136,7 @@ class comment_replies(models.Model):
         
 class nested_replies(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_nested_replies')
-    parent_reply = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
+    nested_parent_reply = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
     comment_reply = models.ForeignKey(comment_replies, null=True, blank=True, on_delete=models.CASCADE, related_name='nested_replies')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -128,14 +144,14 @@ class nested_replies(models.Model):
     
     def clean(self):
     # Ensure that a reply is only nested under a comment reply or another reply, not both
-        if self.parent_reply and self.comment_reply:
+        if self.nested_parent_reply and self.comment_reply:
             raise ValidationError('A reply cannot be both a nested reply and a comment reply at the same time.')
 
     # Additional custom validation logic as needed
     def __str__(self):
         parent_reply_str = ''
-        if self.parent_reply:
-            parent_reply_str = f' (nested under {self.parent_reply.user.username})'
+        if self.nested_parent_reply:
+            parent_reply_str = f' (nested under {self.nested_parent_reply.user.username})'
         return f'{self.user.username}: {self.content}{parent_reply_str}'
 
 

@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Sokobeauty',
+    'shop',
+    'account',
+    'rest_framework',
+    'rest_framework.authtoken',  
 ]
 
 MIDDLEWARE = [
@@ -69,7 +73,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'dukatech.wsgi.application'
-AUTH_USER_MODEL = 'Sokobeauty.User'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -122,5 +125,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'Sokobeauty.User'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# APPEND_SLASH=True

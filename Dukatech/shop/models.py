@@ -19,7 +19,7 @@ class PaymentMethod(models.Model):
     
 # Represents the payment methods a user supports
 class UserPaymentMethod(models.Model):
-    user=models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_payment_mathods")
+    user=models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_payment_methods")
     payment_method=models.ForeignKey(PaymentMethod, on_delete=models.CASCADE, related_name="user_payment_methods")
     is_default=models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
